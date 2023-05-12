@@ -13,7 +13,7 @@ func TestLB(t *testing.T){
         TerraformDir: "../load_balancer",
 
         Vars: map[string]interface{}{
-            // "lb_security_group_ids": [1]string{"default",},
+            "subnet_ids": "[\"dummyId\"]",
             "http_open": 8080,
         },
     }

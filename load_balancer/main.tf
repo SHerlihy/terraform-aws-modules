@@ -1,33 +1,20 @@
-data "aws_vpc" "default" {
-  default = true
-}
+terraform {
+      required_version = ">= 1.0.0, < 2.0.0"
 
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 4.0"
+    }
   }
 }
 
-resource "aws_security_group" "alb" {
-  name = "lb_1_security_group"
-
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+resource "aws_lb" "lb_1" {
+  name               = "http-load-balancer"
+  load_balancer_type = "application"
+  subnets            = var.subnet_ids
+  security_groups    = [aws_security_group.alb.id]
   }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
-}
-
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.lb_1.arn
@@ -45,50 +32,27 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-// resource "aws_lb_listener_rule" "asg" {
-//   listener_arn = aws_lb_listener.http.arn
-//   priority     = 100
-// 
-//   condition {
-//     path_pattern {
-//       values = ["*"]
-//     }
-//   }
-// 
-//   action {
-//     type             = "forward"
-//     target_group_arn = aws_lb_target_group.asg.arn
-//   }
-// }
-
-// resource "aws_lb_target_group" "asg" {
-//   name     = "asg-health-check"
-//   port     = var.http_open
-//   protocol = "HTTP"
-//   vpc_id   = data.aws_vpc.default.id
-// 
-//   health_check {
-//     path                = "/"
-//     protocol            = "HTTP"
-//     matcher             = "200"
-//     interval            = 15
-//     timeout             = 3
-//     healthy_threshold   = 2
-//     unhealthy_threshold = 2
-//   }
-// }
-
-resource "aws_lb" "lb_1" {
-  name               = "http-load-balancer"
-  load_balancer_type = "application"
-  subnets            = data.aws_subnets.default.ids
-  security_groups    = [aws_security_group.alb.id]
-  }
-
-output "load_balancer_dns" {
-  value = aws_lb.lb_1.dns_name
+resource "aws_security_group" "alb" {
+  name = "lb_1_security_group"
 }
 
-// output "target_group_arn" {
-//     value = aws_lb_target_group.asg.arn
-// }
+resource "aws_security_group_rule" "allow_http_inbound" {
+    type = "ingress"
+    security_group_id = aws_security_group.alb.id
+
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+}
+
+
+resource "aws_security_group_rule" "allow_all_outbound" {
+    type = "egress"
+    security_group_id = aws_security_group.alb.id
+
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+}
