@@ -13,12 +13,13 @@ resource "aws_lb" "lb_1" {
   name               = "http-load-balancer"
   load_balancer_type = "application"
   subnets            = var.subnet_ids 
-  security_groups    = [aws_security_group.alb.id]
+  // why not var?
+  security_groups    = var.security_group_ids
   }
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.lb_1.arn
-  port              = 80
+  port              = var.open_port
   protocol          = "HTTP"
 
   default_action {
@@ -30,29 +31,4 @@ resource "aws_lb_listener" "http" {
       status_code  = 404
     }
   }
-}
-
-resource "aws_security_group" "alb" {
-  name = "lb_1_security_group"
-}
-
-resource "aws_security_group_rule" "allow_http_inbound" {
-    type = "ingress"
-    security_group_id = aws_security_group.alb.id
-
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-}
-
-
-resource "aws_security_group_rule" "allow_all_outbound" {
-    type = "egress"
-    security_group_id = aws_security_group.alb.id
-
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
 }
