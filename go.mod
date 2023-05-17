@@ -1,8 +1,8 @@
-module github.com/sherlihy/terraform_example
+module github.com/SHerlihy/terraform-aws-modules
 
 go 1.20
 
-require github.com/gruntwork-io/terratest v0.41.23
+require github.com/gruntwork-io/terratest v0.41.24
 
 require (
 	cloud.google.com/go v0.105.0 // indirect

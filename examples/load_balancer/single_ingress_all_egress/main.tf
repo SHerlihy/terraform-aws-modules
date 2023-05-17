@@ -10,7 +10,7 @@ terraform {
 }
 
 module "security_group" {
-source = "../../../../security_groups/single_ingress_all_egress"
+source = "../../../security_groups/single_ingress_all_egress"
 
 name = "test_security_group"
 
@@ -18,7 +18,7 @@ open_port = var.open_port
 }
 
 module "load_balancer" {
-source = "../../../../load_balancer"
+source = "../../../load_balancer"
 
 open_port = var.open_port 
 

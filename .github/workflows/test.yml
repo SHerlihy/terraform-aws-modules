@@ -1,0 +1,29 @@
+name: test-on-push 
+on: [push]
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.15'
+            
+      - name: Confirm Go
+        run: go --version
+
+      - name: Setup Terraform
+        uses: autero1/action-terraform@v1.1.0
+        with:
+          terraform_version: 1.2.8
+
+      - name: Confirm Terraform
+        run: terraform --version
+
+      - name: All Tests
+        run: go test -count=1 -timeout 5m ./...
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

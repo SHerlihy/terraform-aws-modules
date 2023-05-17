@@ -24,7 +24,7 @@ func TestLB(t *testing.T) {
 	fmt.Println(defaultSubnetIds)
 
 	opts := &terraform.Options{
-		TerraformDir: "../../../wrapped_modules/load_balancer/single_ingress_all_egress",
+		TerraformDir: "../../load_balancer/single_ingress_all_egress",
 
 		Vars: map[string]interface{}{
 			"subnet_ids": defaultSubnetIds,
