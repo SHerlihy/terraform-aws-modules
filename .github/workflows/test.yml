@@ -13,6 +13,10 @@ jobs:
             
       - name: Confirm Go
         run: go version
+        
+      - name: Download Go Modules
+        working-directory: test
+        run: go mod download
 
       - name: Setup Terraform
         uses: autero1/action-terraform@v1.1.0
