@@ -15,7 +15,6 @@ jobs:
         run: go version
         
       - name: Download Go Modules
-        working-directory: test
         run: go mod download
 
       - name: Setup Terraform
