@@ -24,7 +24,6 @@ jobs:
         run: terraform --version
 
       - name: Setup Dependencies
-        working-directory: tests/
         run:  go get -v -t -d && go mod tidy
 
       - name: All Tests
