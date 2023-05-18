@@ -23,9 +23,6 @@ jobs:
       - name: Confirm Terraform
         run: terraform --version
 
-      - name: Download Go Modules
-        run: go help && go mod download
-
       - name: All Tests
         run: go test -count=1 -v -timeout 5m ./...
         env:
