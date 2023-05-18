@@ -24,7 +24,7 @@ jobs:
         run: terraform --version
 
       - name: Init go
-        run: go mod init ./tests
+        run: go mod init tests
 
       - name: Setup Dependencies
         working-directory: tests/
