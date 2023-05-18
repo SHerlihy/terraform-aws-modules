@@ -4,7 +4,3 @@
 # .tfstate files
 *.tfstate
 *.tfstate.*
-
-# go init files
-/go.mod
-/go.sum
