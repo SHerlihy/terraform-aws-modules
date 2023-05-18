@@ -28,11 +28,6 @@ jobs:
       run: |
         go get -v -t -d ./...        
 
-    - name: Build
-      env:
-        GOPROXY: "https://proxy.golang.org"
-      run: go build .
-
     - name: Test
       env:
         GOPROXY: "https://proxy.golang.org"
