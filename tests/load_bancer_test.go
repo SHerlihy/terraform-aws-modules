@@ -37,6 +37,9 @@ func TestLB(t *testing.T) {
 	terraform.Init(t, opts)
 	terraform.Apply(t, opts)
 
+    lbDNSName := terraform.Output(t, opts, "lb_dns_name")
+    fmt.Println(lbDNSName)
+
 	lbDNS := terraform.OutputRequired(t, opts, "lb_dns_name")
 	url := fmt.Sprintf("http://%s", lbDNS)
 
