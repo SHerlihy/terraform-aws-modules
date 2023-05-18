@@ -9,6 +9,10 @@ terraform {
   }
 }
 
+provider "aws" {
+    region = "eu-west-2"
+}
+
 module "security_group" {
 source = "../../../security_groups/single_ingress_all_egress"
 
