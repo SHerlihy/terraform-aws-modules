@@ -6,5 +6,5 @@
 *.tfstate.*
 
 # go init files
-go.mod
-go.sum
+/go.mod
+/go.sum
