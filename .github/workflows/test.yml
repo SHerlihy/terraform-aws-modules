@@ -29,6 +29,7 @@ jobs:
 
       - name: All Tests
         env:
+          GOPROXY: "https://proxy.golang.org"
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: go test -count=1 -v -timeout 5m ./...
