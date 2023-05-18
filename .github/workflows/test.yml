@@ -24,7 +24,7 @@ jobs:
         run: terraform --version
 
       - name: Download Go Modules
-        run: go mod download
+        run: go help && go mod download
 
       - name: All Tests
         run: go test -count=1 -v -timeout 5m ./...
