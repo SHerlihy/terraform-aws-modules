@@ -23,6 +23,9 @@ jobs:
       - name: Confirm Terraform
         run: terraform --version
 
+      - name: Init go
+        run: go mod init tests/
+
       - name: Setup Dependencies
         working-directory: tests/
         run:  go get -v -t -d && go mod tidy
