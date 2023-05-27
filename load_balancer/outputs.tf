@@ -9,5 +9,6 @@ output "alb_http_listener_arn" {
 }
 
 output "target_group_arn" {
-    value = aws_lb.lb_1.arn
+    value = aws_lb_target_group.front_end.arn
 }
+

@@ -34,3 +34,7 @@ subnet_ids = var.subnet_ids
 output "lb_dns_name" {
     value = module.load_balancer.lb_dns_name
 }
+
+output "target_group_arn" {
+    value = module.load_balancer.target_group_arn
+}

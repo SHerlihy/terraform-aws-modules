@@ -13,9 +13,16 @@ resource "aws_lb" "lb_1" {
   name               = "http-load-balancer"
   load_balancer_type = "application"
   subnets            = var.subnet_ids 
-  // why not var?
   security_groups    = var.security_group_ids
   }
+
+resource "aws_lb_target_group" "front_end" {
+  name        = "lb-alb-tg"
+  target_type = "alb"
+  port        = var.open_port
+  protocol    = "TCP"
+  vpc_id      = var.vpc_id
+}
 
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.lb_1.arn
@@ -23,12 +30,7 @@ resource "aws_lb_listener" "http" {
   protocol          = "HTTP"
 
   default_action {
-    type = "fixed-response"
-
-    fixed_response {
-      content_type = "text/plain"
-      message_body = "404: page not found"
-      status_code  = 404
-    }
+    type = "forward"
+    target_group_arn = aws_lb_target_group.front_end.arn
   }
 }

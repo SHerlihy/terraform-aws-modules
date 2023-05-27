@@ -38,6 +38,8 @@ func TestLB(t *testing.T) {
 	terraform.Apply(t, opts)
 
 	lbDNS := terraform.OutputRequired(t, opts, "lb_dns_name")
+	lbARN := terraform.OutputRequired(t, opts, "target_group_arn")
+    fmt.Println(lbARN)
 	url := fmt.Sprintf("http://%s", lbDNS)
 
 	expectedStatus := 404
