@@ -27,6 +27,7 @@ func TestLB(t *testing.T) {
 		TerraformDir: "../examples/load_balancer/single_ingress_all_egress",
 
 		Vars: map[string]interface{}{
+            "vpc_id": defaultVPC.Id,
 			"subnet_ids": defaultSubnetIds,
 			"open_port":  80,
 		},

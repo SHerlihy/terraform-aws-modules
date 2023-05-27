@@ -28,6 +28,8 @@ open_port = var.open_port
 
 security_group_ids = [module.security_group.module_security_group_id]
 
+vpc_id = var.vpc_id
+
 subnet_ids = var.subnet_ids
 }
 
