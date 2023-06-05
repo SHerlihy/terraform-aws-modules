@@ -23,38 +23,23 @@ locals {
     pvt1a = "10.0.3.0/24"
     pvt1b = "10.0.4.0/24"
   }
-
-cidr_blocks_ping = {
-    test1 = "10.0.1.0/24"
-}
 }
 
-data "aws_ami" "ubuntu" {
-  most_recent = true
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-
-  owners = ["099720109477"] # Canonical
+module "image_ubuntu20" {
+    source = "../../../ubuntu20_id"
 }
 
 data "template_file" "user_data" {
-  template = file("../serve_hello_world.sh")
+  template = file("../../../config_server/serve_hello_world.sh")
 }
 
-module "vpc_ping" {
-  source = "../../../networking/london_vpc"
+module "ping_server" {
+    source = "../../../ping_server"
 
-  vpc_cidr_block = "10.0.0.0/16"
-
-  pub_cidr_blocks = local.cidr_blocks_ping
+   // cidr_blocks_list_ingress = [
+   // local.cidr_blocks_pub.pub1a, 
+   // local.cidr_blocks_pvt.pvt1a
+   // ]    
 }
 
 module "vpc_app" {
@@ -97,60 +82,15 @@ module "security_group_app_ping" {
   ingress_cidr_list = [local.cidr_blocks_pub.pub1a, local.cidr_blocks_pub.pub1b]
 }
 
-
-module "security_group_ping_ssh" {
-  source = "../../../security_groups/single_ingress_all_egress"
-
-  name = "ping_ssh"
-
-  open_port = 22
-
-  vpc_id = module.vpc_ping.vpc_id
-}
-
-module "security_group_ping_ping" {
-  source = "../../../security_groups/ping"
-
-  name = "ping_ping"
-
-  vpc_id = module.vpc_ping.vpc_id
-
-  ingress_cidr_list = [local.cidr_blocks_pub.pub1a, local.cidr_blocks_pvt.pvt1a]
-}
-
 resource "aws_key_pair" "ssh-key" {
     key_name = "ssh-key"
     public_key = file("../id_rsa.pub")
 }
 
-resource "aws_instance" "pings" {
-  for_each = module.vpc_ping.pub_subnet_ids_map
-
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
-
-  subnet_id              = each.value
-  vpc_security_group_ids = [
-  module.security_group_ping_ssh.module_security_group_id,
-  module.security_group_ping_ping.module_security_group_id
-  ]
-
-  key_name =  aws_key_pair.ssh-key.key_name 
-
-  tags = {
-    Name = each.key
-  }
-}
-
-//resource "aws_network_interface_sg_attachment" "ping_ssh-test1" {
-//  security_group_id    = module.security_group_ping_ssh.module_security_group_id
-//  network_interface_id = aws_instance.pings["test1"].primary_network_interface_id
-//}
-
 resource "aws_instance" "publics" {
   for_each = module.vpc_app.pub_subnet_ids_map
 
-  ami           = data.aws_ami.ubuntu.id
+  ami           = module.image_ubuntu20.ubuntu20_id
   instance_type = "t2.micro"
 
   subnet_id              = each.value
@@ -176,7 +116,7 @@ resource "aws_network_interface_sg_attachment" "app_ssh-pub1a" {
 resource "aws_instance" "privates" {
   for_each = module.vpc_app.pvt_subnet_ids_map
 
-  ami           = data.aws_ami.ubuntu.id
+  ami           = module.image_ubuntu20.ubuntu20_id
   instance_type = "t2.micro"
 
   subnet_id              = each.value
@@ -222,3 +162,7 @@ resource "aws_route_table_association" "pvt" {
   route_table_id = aws_route_table.pvt.id
 }
 
+output "ping_server_pubIp" {
+    description = "ping server public IP"
+    value = module.ping_server.public_ip
+}
