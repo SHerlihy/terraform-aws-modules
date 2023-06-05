@@ -26,7 +26,7 @@ locals {
 }
 
 module "image_ubuntu20" {
-    source = "../../../ubuntu20_id"
+  source = "../../../ubuntu20_id"
 }
 
 data "template_file" "user_data" {
@@ -34,12 +34,12 @@ data "template_file" "user_data" {
 }
 
 module "ping_server" {
-    source = "../../../ping_server"
+  source = "../../../ping_server"
 
-   // cidr_blocks_list_ingress = [
-   // local.cidr_blocks_pub.pub1a, 
-   // local.cidr_blocks_pvt.pvt1a
-   // ]    
+  // cidr_blocks_list_ingress = [
+  // local.cidr_blocks_pub.pub1a, 
+  // local.cidr_blocks_pvt.pvt1a
+  // ]    
 }
 
 module "vpc_app" {
@@ -83,8 +83,8 @@ module "security_group_app_ping" {
 }
 
 resource "aws_key_pair" "ssh-key" {
-    key_name = "ssh-key"
-    public_key = file("../.ssh/id_rsa.pub")
+  key_name   = "ssh-key"
+  public_key = file("../.ssh/id_rsa.pub")
 }
 
 resource "aws_instance" "publics" {
@@ -93,15 +93,21 @@ resource "aws_instance" "publics" {
   ami           = module.image_ubuntu20.ubuntu20_id
   instance_type = "t2.micro"
 
-  subnet_id              = each.value
+  subnet_id = each.value
   vpc_security_group_ids = [
-  module.security_group_app_http.module_security_group_id,
-  module.security_group_app_ping.module_security_group_id
+    module.security_group_app_http.module_security_group_id,
+    module.security_group_app_ping.module_security_group_id
   ]
 
   user_data = data.template_file.user_data.rendered
 
-  key_name =  aws_key_pair.ssh-key.key_name 
+  key_name = aws_key_pair.ssh-key.key_name
+
+  provisioner "file" {
+    source      = "../.ssh/id_rsa"
+    destination = "/tmp/id_rsa"
+  }
+
 
   tags = {
     Name = each.key
@@ -119,15 +125,15 @@ resource "aws_instance" "privates" {
   ami           = module.image_ubuntu20.ubuntu20_id
   instance_type = "t2.micro"
 
-  subnet_id              = each.value
+  subnet_id = each.value
   vpc_security_group_ids = [
-  module.security_group_app_http.module_security_group_id,
-  module.security_group_app_ping.module_security_group_id
+    module.security_group_app_http.module_security_group_id,
+    module.security_group_app_ping.module_security_group_id
   ]
 
   user_data = data.template_file.user_data.rendered
 
-  key_name =  aws_key_pair.ssh-key.key_name 
+  key_name = aws_key_pair.ssh-key.key_name
 
   tags = {
     Name = each.key
@@ -163,6 +169,6 @@ resource "aws_route_table_association" "pvt" {
 }
 
 output "ping_server_pubIp" {
-    description = "ping server public IP"
-    value = module.ping_server.public_ip
+  description = "ping server public IP"
+  value       = module.ping_server.public_ip
 }
