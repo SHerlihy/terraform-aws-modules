@@ -37,9 +37,9 @@ module "security_group_ping_ping" {
   ingress_cidr_list = var.cidr_blocks_list_ingress
 }
 
-//data "template_file" "user_data" {
-//  template = file("../config_server/serve_hello_world.sh")
-//}
+data "template_file" "user_data" {
+  template = file("${path.module}/../config_server/serve_hello_world.sh")
+}
 
 resource "aws_instance" "ping" {
   for_each = module.vpc_ping.pub_subnet_ids_map
@@ -52,7 +52,7 @@ resource "aws_instance" "ping" {
     module.security_group_ping_ping.module_security_group_id
   ]
 
-//  user_data = data.template_file.user_data.rendered
+  user_data = data.template_file.user_data.rendered
 
   tags = {
     Name = each.key

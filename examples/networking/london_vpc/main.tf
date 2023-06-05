@@ -84,7 +84,7 @@ module "security_group_app_ping" {
 
 resource "aws_key_pair" "ssh-key" {
     key_name = "ssh-key"
-    public_key = file("../id_rsa.pub")
+    public_key = file("../.ssh/id_rsa.pub")
 }
 
 resource "aws_instance" "publics" {

@@ -14,6 +14,7 @@ func TestPingServer(t *testing.T) {
 	defer terraform.Destroy(t, opts)
 
 	terraform.Init(t, opts)
+
 	terraform.Apply(t, opts)
 
 	pingServerIp := terraform.OutputRequired(t, opts, "public_ip")
@@ -23,7 +24,9 @@ func TestPingServer(t *testing.T) {
         panic(err)
     }
     pinger.Count = 3
+
     pinger.Run() // blocks until finished
+
     stats := pinger.Statistics()
 
     if stats.PacketsRecv == 0 {
