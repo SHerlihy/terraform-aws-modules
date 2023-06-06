@@ -35,11 +35,6 @@ data "template_file" "user_data" {
 
 module "ping_server" {
   source = "../../../ping_server"
-
-  // cidr_blocks_list_ingress = [
-  // local.cidr_blocks_pub.pub1a, 
-  // local.cidr_blocks_pvt.pvt1a
-  // ]    
 }
 
 module "vpc_app" {
@@ -79,8 +74,8 @@ module "security_group_app_ping" {
 
   vpc_id = module.vpc_app.vpc_id
 
-  ingress_cidr_list = [local.cidr_blocks_pub.pub1a, local.cidr_blocks_pub.pub1b]
-}
+  ingress_cidr_list = ["0.0.0.0/0"]
+  }
 
 resource "aws_key_pair" "ssh-key" {
   key_name   = "ssh-key"
@@ -101,13 +96,8 @@ resource "aws_instance" "publics" {
 
   user_data = data.template_file.user_data.rendered
 
+
   key_name = aws_key_pair.ssh-key.key_name
-
-  provisioner "file" {
-    source      = "../.ssh/id_rsa"
-    destination = "/tmp/id_rsa"
-  }
-
 
   tags = {
     Name = each.key
@@ -117,6 +107,25 @@ resource "aws_instance" "publics" {
 resource "aws_network_interface_sg_attachment" "app_ssh-pub1a" {
   security_group_id    = module.security_group_app_ssh.module_security_group_id
   network_interface_id = aws_instance.publics["pub1a"].primary_network_interface_id
+}
+
+resource "terraform_data" "pub1a_pvt_key" {
+  connection {
+      type = "ssh"
+      port = "22"
+
+      host = "${aws_instance.publics["pub1a"].public_ip}"
+      user = "ubuntu"
+
+      private_key = "${file("${path.module}/../.ssh/id_rsa")}" 
+
+      timeout = "2m"
+  }
+
+  provisioner "file" {
+      source = "${path.module}/../.ssh/id_rsa"
+      destination = "/home/ubuntu/.ssh/id_rsa" 
+  }
 }
 
 resource "aws_instance" "privates" {
