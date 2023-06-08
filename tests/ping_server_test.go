@@ -17,9 +17,9 @@ func TestPingServer(t *testing.T) {
 
 	terraform.Apply(t, opts)
 
-	pingServerIp := terraform.OutputRequired(t, opts, "public_ip")
+	pingServerDNS := terraform.OutputRequired(t, opts, "public_dns")
 
-    pinger, err := ping.NewPinger(pingServerIp)
+    pinger, err := ping.NewPinger(pingServerDNS)
     if err != nil {
         panic(err)
     }
