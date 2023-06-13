@@ -120,31 +120,6 @@ resource "aws_instance" "privates" {
   }
 }
 
-resource "terraform_data" "pub1a_pvt_key" {
-  connection {
-    type = "ssh"
-    port = "22"
-
-    host = aws_instance.publics["pub1a"].public_ip
-    user = "ubuntu"
-
-    private_key = file("${path.module}/../.ssh/id_rsa")
-
-    timeout = "2m"
-  }
-
-  provisioner "file" {
-    source      = "${path.module}/../.ssh/id_rsa"
-    destination = "/home/ubuntu/.ssh/id_rsa"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo chmod 400 /home/ubuntu/.ssh/id_rsa",
-    ]
-  }
-}
-
 resource "aws_eip" "nat_gateway" {
   vpc = true
 }
@@ -168,26 +143,14 @@ resource "aws_route_table_association" "pvt" {
   route_table_id = aws_route_table.pvt.id
 }
 
-resource "terraform_data" "pub1a-known_hosts" {
-  depends_on = [
-    aws_instance.privates["pvt1a"]
-  ]
+module "ssh_access-pub1a_pvt1a" {
+  source = "../../../config_server_access/ssh_access"
 
-  connection {
-    type = "ssh"
-    port = "22"
+  initial_ip = aws_instance.publics["pub1a"].public_dns
 
-    host = aws_instance.publics["pub1a"].public_ip
-    user = "ubuntu"
+  initial_pvt_key = file("${path.module}/../.ssh/id_rsa")
 
-    private_key = file("${path.module}/../.ssh/id_rsa")
-
-    timeout = "2m"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo ssh-keyscan -t rsa ${aws_instance.privates["pvt1a"].private_dns} >> /home/ubuntu/.ssh/known_hosts"
-    ]
-  }
+  // accesssable_pvt_key_source = file("${path.module}/../.ssh/id_rsa")
+  accessible_pvt_key_source = "${path.module}/../.ssh/id_rsa"
+  accessible_ip             = aws_instance.privates["pvt1a"].private_dns
 }
