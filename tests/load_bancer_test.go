@@ -27,7 +27,7 @@ func TestLB(t *testing.T) {
 		TerraformDir: "../examples/load_balancer/single_ingress_all_egress",
 
 		Vars: map[string]interface{}{
-            "vpc_id": defaultVPC.Id,
+			"vpc_id":     defaultVPC.Id,
 			"subnet_ids": defaultSubnetIds,
 			"open_port":  80,
 		},
@@ -40,7 +40,7 @@ func TestLB(t *testing.T) {
 
 	lbDNS := terraform.OutputRequired(t, opts, "lb_dns_name")
 	lbARN := terraform.OutputRequired(t, opts, "target_group_arn")
-    fmt.Println(lbARN)
+	fmt.Println(lbARN)
 	url := fmt.Sprintf("http://%s", lbDNS)
 
 	expectedStatus := 404

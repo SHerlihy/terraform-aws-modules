@@ -59,6 +59,6 @@ resource "aws_instance" "ping" {
   }
 }
 
-output "public_ip" {
-  value = aws_instance.ping["ping1"].public_ip
+output "public_dns" {
+  value = aws_instance.ping["ping1"].public_dns
 }

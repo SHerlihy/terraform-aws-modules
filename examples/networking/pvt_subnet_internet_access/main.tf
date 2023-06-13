@@ -65,7 +65,7 @@ module "security_group_app_ping" {
   vpc_id = module.vpc_app.vpc_id
 
   ingress_cidr_list = ["0.0.0.0/0"]
-  }
+}
 
 resource "aws_key_pair" "ssh-key" {
   key_name   = "ssh-key"
@@ -98,24 +98,6 @@ resource "aws_network_interface_sg_attachment" "app_ssh-pub1a" {
   network_interface_id = aws_instance.publics["pub1a"].primary_network_interface_id
 }
 
-resource "terraform_data" "pub1a_pvt_key" {
-  connection {
-      type = "ssh"
-      port = "22"
-
-      host = "${aws_instance.publics["pub1a"].public_ip}"
-      user = "ubuntu"
-
-      private_key = "${file("${path.module}/../.ssh/id_rsa")}" 
-
-      timeout = "2m"
-  }
-
-  provisioner "file" {
-      source = "${path.module}/../.ssh/id_rsa"
-      destination = "/home/ubuntu/.ssh/id_rsa" 
-  }
-}
 
 resource "aws_instance" "privates" {
   for_each = module.vpc_app.pvt_subnet_ids_map
@@ -135,6 +117,31 @@ resource "aws_instance" "privates" {
 
   tags = {
     Name = each.key
+  }
+}
+
+resource "terraform_data" "pub1a_pvt_key" {
+  connection {
+    type = "ssh"
+    port = "22"
+
+    host = aws_instance.publics["pub1a"].public_ip
+    user = "ubuntu"
+
+    private_key = file("${path.module}/../.ssh/id_rsa")
+
+    timeout = "2m"
+  }
+
+  provisioner "file" {
+    source      = "${path.module}/../.ssh/id_rsa"
+    destination = "/home/ubuntu/.ssh/id_rsa"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo chmod 400 /home/ubuntu/.ssh/id_rsa",
+    ]
   }
 }
 
@@ -159,4 +166,28 @@ resource "aws_route_table" "pvt" {
 resource "aws_route_table_association" "pvt" {
   subnet_id      = module.vpc_app.pvt_subnet_ids_map.pvt1a
   route_table_id = aws_route_table.pvt.id
+}
+
+resource "terraform_data" "pub1a-known_hosts" {
+  depends_on = [
+    aws_instance.privates["pvt1a"]
+  ]
+
+  connection {
+    type = "ssh"
+    port = "22"
+
+    host = aws_instance.publics["pub1a"].public_ip
+    user = "ubuntu"
+
+    private_key = file("${path.module}/../.ssh/id_rsa")
+
+    timeout = "2m"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo ssh-keyscan -t rsa ${aws_instance.privates["pvt1a"].private_dns} >> /home/ubuntu/.ssh/known_hosts"
+    ]
+  }
 }
