@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/go-ping/ping v1.1.0
 	github.com/gruntwork-io/terratest v0.43.0
+	golang.org/x/crypto v0.9.0
 )
 
 require (
@@ -54,7 +55,6 @@ require (
 	github.com/urfave/cli v1.22.2 // indirect
 	github.com/zclconf/go-cty v1.13.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/crypto v0.9.0 // indirect
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
 	golang.org/x/sync v0.2.0 // indirect
