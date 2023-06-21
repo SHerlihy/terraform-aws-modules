@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"testing"
+    "time"
 )
 
 func TestPvtSubnetInternetAccess(t *testing.T) {
@@ -37,27 +38,40 @@ func TestPvtSubnetInternetAccess(t *testing.T) {
 		unexpectPong(t, pvt1bServerPubDNS)
 	})
 
-	//	t.run("ssh into pvt", func(t *testing.T) {
-	//		writeableSSHConnOn22 := writeableSSHConnSpecPort(22)
-	//
-	//		time.Sleep(5 * time.Second)
-	//		wr := make(chan []byte)
-	//		writeableSSHConnOn22(pub1aServerPubDNS, "../examples/networking/.ssh/id_rsa", wr)
-	//
-	//		sshIntoPvt := "ssh -tt -i \"./.ssh/id_rsa\" " + "ubuntu@" + pvt1aServerPvtDNS + "\n"
-	//		pingInitial := "ping -c 3 " + pub1aServerPubDNS + "\n"
-	//
-	//		wr <- []byte(sshIntoPvt)
-	//		wr <- []byte("hostname -I\n")
-	//		wr <- []byte(pingInitial)
-	//
-	//		scanner := bufio.NewScanner(os.Stdin)
-	//		scanner.Scan()
-	//		text := scanner.Text()
-	//		fmt.Println(text)
-	//
-	//		time.Sleep(5 * time.Second)
-	//	})
+	t.Run("ssh into pvt", func(t *testing.T) {
+		writeableSSHConnOn22 := helpers.WriteableSSHConnSpecPort(22)
+
+		wr := make(chan []byte, 4)
+		done := make(chan struct{})
+
+        writeableSSHConnOn22(pub1aServerPubDNS, "../examples/networking/.ssh/id_rsa", wr, done)
+
+        fmt.Println("writting to wr")
+
+		wr <- []byte("hostname -I\n")
+        
+		time.Sleep(5 * time.Second)
+        close(done)
+
+		expectPong(t, pingServerPubDNS)
+		//time.Sleep(5 * time.Second)
+		//wr := make(chan []byte)
+		//writeableSSHConnOn22(pub1aServerPubDNS, "../examples/networking/.ssh/id_rsa", wr)
+
+		//sshIntoPvt := "ssh -tt -i \"./.ssh/id_rsa\" " + "ubuntu@" + pvt1aServerPvtDNS + "\n"
+		//pingInitial := "ping -c 3 " + pub1aServerPubDNS + "\n"
+
+		//wr <- []byte(sshIntoPvt)
+		//wr <- []byte("hostname -I\n")
+		//wr <- []byte(pingInitial)
+
+		//scanner := bufio.NewScanner(os.Stdin)
+		//scanner.Scan()
+		//text := scanner.Text()
+		//fmt.Println(text)
+
+		//time.Sleep(5 * time.Second)
+	})
 }
 
 func expectPong(t *testing.T, subjectIp string) bool {

@@ -23,20 +23,36 @@ func PingServer(subjectIp string) *ping.Statistics {
 	return pinger.Statistics()
 }
 
-func WriteableSSHConnSpecPort(port int) func() int {
-	return func() int {
-		return 7 + port
+func WriteableSSHConnSpecPort(port int) func(serverDNS string, pvtKeyPath string, wr chan []byte, done chan struct{}) {
+	 return func(serverDNS string, pvtKeyPath string, wr chan []byte, done chan struct{}) {
+		writeableSSHConn(port, serverDNS, pvtKeyPath, wr, done)
 	}
 }
 
-//func WriteableSSHConnSpecPort(port int) func(string, string, chan []byte) {
-//	 return func(serverDNS string, pvtKeyPath string, wr chan []byte) {
-//		return writeableSSHConn(port, serverDNS, pvtKeyPath, wr)
-//	}
-//}
+func writeableSSHConn(port int, serverDNS string, pvtKeyPath string, wr chan []byte, done chan struct{}) {
+    conn := makeSSHConnection(port , serverDNS , pvtKeyPath )
 
-func writeableSSHConn(port int, serverDNS string, pvtKeyPath string, wr chan []byte) {
-	var err error
+    session, err := conn.NewSession()
+
+    go func() {
+        select {
+        case <-done:
+            conn.Close()
+            session.Close()
+        }
+    }()
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	interactWithSession(session, wr, done)
+
+    fmt.Println("starting shell")
+	session.Shell()
+}
+
+func makeSSHConnection(port int, serverDNS string, pvtKeyPath string) *ssh.Client {
 	var signer ssh.Signer
 
 	host := fmt.Sprintf("%s:%v", serverDNS, port)
@@ -66,21 +82,18 @@ func writeableSSHConn(port int, serverDNS string, pvtKeyPath string, wr chan []b
 
 	var conn *ssh.Client
 
-	var stdin io.WriteCloser
-	var stdout, stderr io.Reader
-
 	conn, err = ssh.Dial("tcp", host, conf)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	defer conn.Close()
 
-	var session *ssh.Session
-	session, err = conn.NewSession()
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-	defer session.Close()
+    return conn
+}
+
+func interactWithSession(session *ssh.Session, wr chan []byte, done chan struct{}) {
+    var err error
+	var stdin io.WriteCloser
+	var stdout, stderr io.Reader
 
 	stdin, err = session.StdinPipe()
 	if err != nil {
@@ -97,20 +110,44 @@ func writeableSSHConn(port int, serverDNS string, pvtKeyPath string, wr chan []b
 		fmt.Println(err.Error())
 	}
 
+	// hypothesis: as wr is not being read, input is limited to buffer
+	// is this deliberate to protect?
+	// when channel is written to, write that into stdin
 	go func() {
-		for {
-			select {
-			case d := <-wr:
+        select {
+			case <-wr:
+                d := <-wr
 				_, err := stdin.Write(d)
 				if err != nil {
 					fmt.Println(err.Error())
 				}
-			}
-		}
+            case <-done:
+                return
+        }
 	}()
 
+//	go func() {
+//		for {
+//			select {
+//			case <-wr:
+//                d := <-wr
+//				_, err := stdin.Write(d)
+//				if err != nil {
+//					fmt.Println(err.Error())
+//				}
+//            case <-done:
+//                return
+//			}
+//		}
+//	}()
+
+	// always print the stdout
 	go func() {
 		scanner := bufio.NewScanner(stdout)
+            select{
+            case <-done:
+                return
+            }
 		for {
 			if tkn := scanner.Scan(); tkn {
 				rcv := scanner.Bytes()
@@ -128,13 +165,16 @@ func writeableSSHConn(port int, serverDNS string, pvtKeyPath string, wr chan []b
 		}
 	}()
 
+	// always print stderr
 	go func() {
+        select{
+            case <-done:
+                return
+            }
 		scanner := bufio.NewScanner(stderr)
 
 		for scanner.Scan() {
 			fmt.Println(scanner.Text())
 		}
 	}()
-
-	session.Shell()
 }

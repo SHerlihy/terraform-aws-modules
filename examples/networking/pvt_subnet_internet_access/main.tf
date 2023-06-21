@@ -93,6 +93,7 @@ resource "aws_instance" "publics" {
   }
 }
 
+// results in unable to access for remote exec
 resource "aws_network_interface_sg_attachment" "app_ssh-pub1a" {
   security_group_id    = module.security_group_app_ssh.module_security_group_id
   network_interface_id = aws_instance.publics["pub1a"].primary_network_interface_id
@@ -107,7 +108,7 @@ resource "aws_instance" "privates" {
 
   subnet_id = each.value
   vpc_security_group_ids = [
-    module.security_group_app_ssh.module_security_group_id,
+    // module.security_group_app_ssh.module_security_group_id,
     module.security_group_app_ping.module_security_group_id
   ]
 
@@ -143,37 +144,14 @@ resource "aws_route_table_association" "pvt" {
   route_table_id = aws_route_table.pvt.id
 }
 
-// resource "terraform_data" "supply_pvt_key" {
-// 
-// depends_on = [aws_network_interface_sg_attachment.app_ssh-pub1a]
-// 
-//   connection {
-//     type = "ssh"
-//     port = "22"
-// 
-//     host = aws_instance.publics["pub1a"].public_dns
-//     user = "ubuntu"
-// 
-//     private_key = file("${path.module}/../.ssh/id_rsa")
-// 
-//     timeout = "2m"
-//   }
-// 
-//   provisioner "file" {
-//     source      = "${path.module}/../.ssh/id_rsa"
-//     destination = "/home/ubuntu/.ssh/id_rsa"
-//   }
-// 
-//   provisioner "remote-exec" {
-//     inline = [
-//       "sudo chmod 400 /home/ubuntu/.ssh/id_rsa",
-//       "sudo ssh-keyscan -t rsa ${aws_instance.privates["pvt1a"].private_dns} >> /home/ubuntu/.ssh/known_hosts"
-//     ]
-//   }
-// }
+resource "aws_network_interface_sg_attachment" "app_ssh-pvt1a" {
+  security_group_id    = module.security_group_app_ssh.module_security_group_id
+  network_interface_id = aws_instance.privates["pvt1a"].primary_network_interface_id
+}
 
+// this is 50/50 on whether it can connect
 module "ssh_access-pub1a_pvt1a" {
-  depends_on = [aws_network_interface_sg_attachment.app_ssh-pub1a, aws_instance.privates["pvt1a"]]
+  depends_on = [aws_network_interface_sg_attachment.app_ssh-pub1a, aws_network_interface_sg_attachment.app_ssh-pub1a]
   source = "../../../config_server_access/ssh_access"
 
 
