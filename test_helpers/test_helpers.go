@@ -90,7 +90,7 @@ func makeSSHConnection(port int, serverDNS string, pvtKeyPath string) *ssh.Clien
     return conn
 }
 
-func interactWithSession(session *ssh.Session, wr chan []byte, done chan struct{}) {
+func interactWithSession(session *ssh.Session, wr <-chan []byte, done <-chan struct{}) {
     var err error
 	var stdin io.WriteCloser
 	var stdout, stderr io.Reader
@@ -110,44 +110,22 @@ func interactWithSession(session *ssh.Session, wr chan []byte, done chan struct{
 		fmt.Println(err.Error())
 	}
 
-	// hypothesis: as wr is not being read, input is limited to buffer
-	// is this deliberate to protect?
-	// when channel is written to, write that into stdin
 	go func() {
-        select {
-			case <-wr:
-                d := <-wr
-				_, err := stdin.Write(d)
+        for {
+            select {
+                case <-done:
+                return
+            case d := <-wr:
+                _, err := stdin.Write(d)
 				if err != nil {
 					fmt.Println(err.Error())
 				}
-            case <-done:
-                return
+            }
         }
 	}()
 
-//	go func() {
-//		for {
-//			select {
-//			case <-wr:
-//                d := <-wr
-//				_, err := stdin.Write(d)
-//				if err != nil {
-//					fmt.Println(err.Error())
-//				}
-//            case <-done:
-//                return
-//			}
-//		}
-//	}()
-
-	// always print the stdout
 	go func() {
 		scanner := bufio.NewScanner(stdout)
-            select{
-            case <-done:
-                return
-            }
 		for {
 			if tkn := scanner.Scan(); tkn {
 				rcv := scanner.Bytes()
@@ -165,16 +143,15 @@ func interactWithSession(session *ssh.Session, wr chan []byte, done chan struct{
 		}
 	}()
 
-	// always print stderr
 	go func() {
-        select{
-            case <-done:
-                return
-            }
 		scanner := bufio.NewScanner(stderr)
 
 		for scanner.Scan() {
 			fmt.Println(scanner.Text())
+            select {
+            case <-done:
+                return
+            }
 		}
 	}()
 }

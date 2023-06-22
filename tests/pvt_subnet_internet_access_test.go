@@ -1,11 +1,11 @@
 package test
 
 import (
-	helpers "github.com/SHerlihy/terraform-aws-modules/test_helpers"
 	"fmt"
+	helpers "github.com/SHerlihy/terraform-aws-modules/test_helpers"
 	"github.com/gruntwork-io/terratest/modules/terraform"
 	"testing"
-    "time"
+	"time"
 )
 
 func TestPvtSubnetInternetAccess(t *testing.T) {
@@ -27,7 +27,7 @@ func TestPvtSubnetInternetAccess(t *testing.T) {
 	pvt1aServerPubDNS := getDNS("pvt_server-net_access-public_DNS")
 	pvt1bServerPubDNS := getDNS("pvt_server-no_access-public_DNS")
 
-	//pvt1aServerPvtDNS := getDNS("pvt_server-net_access-private_DNS")
+	pvt1aServerPvtDNS := getDNS("pvt_server-net_access-private_DNS")
 	//pvt1bServerPvtDNS := getDNS("pvt_server-no_access-private_DNS")
 
 	t.Run("ping servers", func(t *testing.T) {
@@ -41,17 +41,22 @@ func TestPvtSubnetInternetAccess(t *testing.T) {
 	t.Run("ssh into pvt", func(t *testing.T) {
 		writeableSSHConnOn22 := helpers.WriteableSSHConnSpecPort(22)
 
-		wr := make(chan []byte, 4)
+		wr := make(chan []byte)
 		done := make(chan struct{})
 
-        writeableSSHConnOn22(pub1aServerPubDNS, "../examples/networking/.ssh/id_rsa", wr, done)
+		writeableSSHConnOn22(pub1aServerPubDNS, "../examples/networking/.ssh/id_rsa", wr, done)
 
-        fmt.Println("writting to wr")
+		fmt.Println("writting to wr")
+		sshIntoPvt := "ssh -tt -i \"./.ssh/id_rsa\" " + "ubuntu@" + pvt1aServerPvtDNS + "\n"
+		pingInitial := "ping -c 3 " + pub1aServerPubDNS + "\n"
 
+		wr <- []byte("pwd\n")
+		wr <- []byte(sshIntoPvt)
 		wr <- []byte("hostname -I\n")
-        
+		wr <- []byte(pingInitial)
+
 		time.Sleep(5 * time.Second)
-        close(done)
+		close(done)
 
 		expectPong(t, pingServerPubDNS)
 		//time.Sleep(5 * time.Second)
